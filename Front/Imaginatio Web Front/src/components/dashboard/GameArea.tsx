@@ -11,6 +11,7 @@ import {
    compostRemainingTime,
    sunRemainingTime,
    plantName,
+   username,
    isMuted,
    globalVolume
 } from "../../store/resourceStore";
@@ -145,8 +146,9 @@ export default function GameArea() {
    };
 
    const handleOpenCompost = (e: MouseEvent) => {
-      // Botón oculto (modo admin): Activación por combinación de teclas
-      if (e.altKey || e.shiftKey) {
+      // Botón oculto (modo admin): Activación por combinación de teclas restringida por usuario
+      const ALLOWED_ADMINS = ["Tato", "Andrs", "Olivares", "Willy"];
+      if ((e.altKey || e.shiftKey) && ALLOWED_ADMINS.includes(username.value || "")) {
          isDebugOpen.value = true;
          return;
       }
