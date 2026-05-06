@@ -9,19 +9,130 @@ import {
    isSunOnCooldown,
    waterRemainingTime,
    compostRemainingTime,
-   sunRemainingTime
+   sunRemainingTime,
+   plantName,
+   isMuted,
+   globalVolume
 } from "../../store/resourceStore";
-import { isDebugOpen, isEntActive } from "../../store/plantStore";
-import { loadTreeFile, applyTreeDataFrom3D } from "../../store/unityBridge";
+import { 
+   isDebugOpen, 
+   isEntActive, 
+   plantSpeciesId, 
+   plantPhase, 
+   plantUnitySubid, 
+   isSunning, 
+   isEvolving 
+} from "../../store/plantStore";
+import { loadTreeFile, applyTreeDataFrom3D, consumeSeeds } from "../../store/unityBridge";
+import { createPlant } from "../../store/apiClient";
+import { refreshInventory } from "../../store/resourceStore";
+import SPECIES_DESCRIPTION_JSON from "../../config/speciesDescription.json";
+import SPECIES_JSON from "../../config/species.json";
+
 import btnMinijuegoComposta from '../../assets/Recursos web media/btn_MinijuegoComposta.png';
 import btnMinijuegoAgua from '../../assets/Recursos web media/btn_MinijuegoAgua.png';
 import panelDescripcionPlanta from '../../assets/Recursos web media/Panel_DescripciónPlanta.png';
 import solEscenario from '../../assets/Recursos web media/SolEscenario.png';
 import Plant from './Plant';
 import DebugPanel from './DebugPanel';
+import bgMusicSrc from '../../assets/Sonidos Interacciones/Music Background.mp3';
+import { useEffect } from "preact/hooks";
 
 export default function GameArea() {
    const entLocked = isEntActive.value;
+   const audioRef = useRef<HTMLAudioElement>(null);
+
+   const fadeIntervalRef = useRef<number | null>(null);
+   const BASE_BGM_VOLUME = 0.15;
+
+   // Manejo del audio de fondo
+   useEffect(() => {
+      if (audioRef.current) {
+         if (isMuted.value) {
+            audioRef.current.pause();
+            if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
+         } else {
+            // Ajustar volumen según el globalVolume
+            const target = globalVolume.value * BASE_BGM_VOLUME;
+            audioRef.current.volume = (isSunning.value || isEvolving.value) ? target * 0.2 : target;
+            
+            audioRef.current.play().catch(() => {
+               console.warn("Autoplay bloqueado por el navegador.");
+            });
+         }
+      }
+      return () => {
+         if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
+      }
+   }, [isMuted.value, globalVolume.value]);
+
+   const handleAudioEnded = () => {
+      if (!audioRef.current || isMuted.value) return;
+      
+      const audio = audioRef.current;
+      audio.currentTime = 0;
+      audio.volume = 0;
+      audio.play().catch(() => {});
+      
+      if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
+      
+      let vol = 0;
+      const targetMax = globalVolume.value * BASE_BGM_VOLUME;
+      const targetVol = (isSunning.value || isEvolving.value) ? targetMax * 0.2 : targetMax;
+      const step = targetVol / 20; 
+      
+      fadeIntervalRef.current = window.setInterval(() => {
+         vol += step;
+         if (vol >= targetVol) {
+            audio.volume = targetVol;
+            if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
+         } else {
+            audio.volume = Math.min(vol, targetVol);
+         }
+      }, 100);
+   };
+
+   // Ducking (Bajar volumen) cuando hay interacción de Sol o Evolución
+   useEffect(() => {
+      if (audioRef.current && !isMuted.value) {
+         const targetMax = globalVolume.value * BASE_BGM_VOLUME;
+         if (isSunning.value || isEvolving.value) {
+            audioRef.current.volume = targetMax * 0.2; // Reducir al 20% del volumen actual
+         } else {
+            audioRef.current.volume = targetMax;
+         }
+      }
+   }, [isSunning.value, isEvolving.value, isMuted.value, globalVolume.value]);
+
+   // Determinar la descripción según la especie o el subid (si es Ent)
+   const getDescription = () => {
+      const isEnt = plantPhase.value === "ent";
+      const subid = plantUnitySubid.value;
+      const speciesId = plantSpeciesId.value;
+
+      // Si es Ent y tiene subid, priorizamos el subid (autor)
+      if (isEnt && subid && (SPECIES_DESCRIPTION_JSON as any)[subid]) {
+         return (SPECIES_DESCRIPTION_JSON as any)[subid];
+      }
+
+      // De lo contrario, usamos la descripción por especie
+      return (SPECIES_DESCRIPTION_JSON as any)[speciesId] || "Descripción no disponible para esta especie.";
+   };
+
+   // Obtener el subtítulo (Especie + Autor si es Ent)
+   const getSubheader = () => {
+      const speciesId = plantSpeciesId.value;
+      const subid = plantUnitySubid.value;
+      const isEnt = plantPhase.value === "ent";
+      
+      const speciesData = (SPECIES_JSON as any)[speciesId];
+      const commonName = speciesData?.common_name || speciesId;
+      
+      if (isEnt && subid && subid !== speciesId) {
+         return `${commonName} - Diseñado por: ${subid}`;
+      }
+      return commonName;
+   };
 
    // ── Estado del botón de sincronización 3D ──
    type SyncStatus = "idle" | "loading" | "ok" | "error";
@@ -64,11 +175,26 @@ export default function GameArea() {
       try {
          const treeData = await loadTreeFile(file);
          const { nuevasSemillas, plantasActualizadas } = applyTreeDataFrom3D(treeData);
+         
+         // Procesar semillas nuevas (instanciarlas como plantas reales)
+         if (nuevasSemillas.length > 0) {
+            console.info(`[Sync 3D] Procesando ${nuevasSemillas.length} semillas nuevas...`);
+            for (const seed of nuevasSemillas) {
+               try {
+                  await createPlant(seed.species_id, seed.subid);
+               } catch (e) {
+                  console.error(`Error creando planta para semilla ${seed.seed_id}:`, e);
+               }
+            }
+            consumeSeeds(); // Vaciar lista de semillas tras instanciarlas
+            refreshInventory();
+         }
+
          setSyncStatus("ok");
 
          // Feedback por consola para debug
          console.info(
-            `[Sync 3D] ✓ Plantas actualizadas: ${plantasActualizadas} | Semillas nuevas: ${nuevasSemillas.length}`
+            `[Sync 3D] ✓ Plantas actualizadas: ${plantasActualizadas} | Semillas instanciadas: ${nuevasSemillas.length}`
          );
 
          // Volver a idle tras 2.5 segundos
@@ -85,6 +211,9 @@ export default function GameArea() {
 
    return (
       <>
+         {/* Audio de fondo */}
+         <audio ref={audioRef} src={bgMusicSrc} onEnded={handleAudioEnded} />
+
          <div className="absolute inset-0 z-10 flex flex-col justify-end items-center pointer-events-none p-8">
 
             {/* Sol - bloqueado visualmente cuando hay Ent o Cooldown */}
@@ -180,20 +309,19 @@ export default function GameArea() {
                   </button>
 
                   {/* Content */}
-                  <h2 className="text-[#4e341b] text-2xl lg:text-4xl font-bold mb-6 mt-16 text-center drop-shadow-sm">Información de la Planta</h2>
+                  <h2 className="text-[#4e341b] text-2xl lg:text-4xl font-bold mb-1 mt-20 text-center drop-shadow-sm uppercase tracking-wide">
+                     {plantPhase.value === "ent" ? "Información del Ent" : "Información de la Planta"}
+                  </h2>
+                  
+                  {/* Nombre de la especie / Autor */}
+                  <div className="text-[#4e341b]/80 text-xl lg:text-2xl font-black mb-4 text-center drop-shadow-sm italic">
+                     {getSubheader()}
+                  </div>
 
-                  <div className="flex-1 w-full overflow-y-auto px-6 mt-4 text-[#4e341b] text-base lg:text-xl font-medium leading-relaxed
+                  <div className="flex-1 w-full overflow-y-auto px-6 mt-4 text-[#4e341b] text-lg lg:text-2xl font-semibold leading-relaxed
                                   scrollbar-thin scrollbar-thumb-[#8B4513] scrollbar-track-[#f5e6c8]">
-                     <p>
-                        Aquí aparecerá la descripción detallada de la planta, sus características, consejos de cuidado, o curiosidades.
-                        <br /><br />
-                        Este texto puede ser mucho más largo y el contenedor permitirá hacer scroll hacia abajo para leerlo todo. El panel se acomoda respondiendo a la cantidad de texto que haya disponible.
-                        <br /><br />
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque eget vehicula libero. Praesent cursus finibus tortor vel dapibus. Ut pretium orci vitae tortor auctor aliquet. Suspendisse ultrices lacus eget risus varius, bibendum sollicitudin libero lacinia.
-                        <br /><br />
-                        Sed non ipsum odio. Suspendisse dictum lacus justo, non fringilla felis tristique pretium. Donec rutrum lorem lorem, tincidunt mattis arcu luctus varius.
-                        <br /><br />
-                        (Fin del contenido...)
+                     <p className="whitespace-pre-wrap text-center">
+                        {getDescription()}
                      </p>
                   </div>
                </div>

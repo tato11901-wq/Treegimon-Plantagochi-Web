@@ -22,34 +22,34 @@ export interface SpriteConfig {
 // ─────────────────────────────────────────────
 // PASTO  (Spritesheets animados)
 // ─────────────────────────────────────────────
-import pasto_seed from '../assets/Recursos planta/Sprites Pasto/semilla_idle_spritesheet.png';
-import pasto_small_bush from '../assets/Recursos planta/Sprites Pasto/fase2_idle_spritesheet.png';
-import pasto_large_bush from '../assets/Recursos planta/Sprites Pasto/fase3_idle_spritesheet.png';
-import pasto_ent from '../assets/Recursos planta/Sprites Pasto/end_idle_spritesheet.png';
+import pasto_seed from '../assets/Recursos planta/William Santiago Cubillos_Pasto/semilla_idle_spritesheet.png';
+import pasto_small_bush from '../assets/Recursos planta/William Santiago Cubillos_Pasto/fase2_idle_spritesheet.png';
+import pasto_large_bush from '../assets/Recursos planta/William Santiago Cubillos_Pasto/fase3_idle_spritesheet.png';
+import pasto_ent from '../assets/Recursos planta/William Santiago Cubillos_Pasto/end_idle_spritesheet.png';
 
 // ─────────────────────────────────────────────
 // NOGAL  (Imágenes estáticas)
 // ─────────────────────────────────────────────
-import nogal_seed from '../assets/Recursos planta/Sprites Nogal/Azul.png';
-import nogal_small_bush from '../assets/Recursos planta/Sprites Nogal/Azul - copia.png';
-import nogal_large_bush from '../assets/Recursos planta/Sprites Nogal/Azul - copia (2).png';
-import nogal_ent from '../assets/Recursos planta/Sprites Nogal/Azul - copia (3).png';
+import nogal_seed from '../assets/Recursos planta/Diego Martinez_Nogal/2D/Nogal_Diego_Martínez_Rodríguez_fase1_ss.png';
+import nogal_small_bush from '../assets/Recursos planta/Diego Martinez_Nogal/2D/Nogal_Diego_Martínez_Rodríguez_fase2_ss.png';
+import nogal_large_bush from '../assets/Recursos planta/Diego Martinez_Nogal/2D/Nogal_Diego_Martínez_Rodríguez_fase3_ss.png';
+import nogal_ent from '../assets/Recursos planta/Diego Martinez_Nogal/2D/Nogal_Diego_Martínez_Rodríguez_fase4_ss.png';
 
 // ─────────────────────────────────────────────
 // CEDRO  (Imágenes estáticas)
 // ─────────────────────────────────────────────
-import cedro_seed from '../assets/Recursos planta/Sprites Cedro/Verde.png';
-import cedro_small_bush from '../assets/Recursos planta/Sprites Cedro/Verde - copia.png';
-import cedro_large_bush from '../assets/Recursos planta/Sprites Cedro/Verde - copia (2).png';
-import cedro_ent from '../assets/Recursos planta/Sprites Cedro/Verde - copia (3).png';
+import cedro_seed from '../assets/Recursos planta/Juan Lombana_Cedro/2D/Cedro_Juan_Manuel_Lombana_Cárdenas_fase1_ss.png';
+import cedro_small_bush from '../assets/Recursos planta/Juan Lombana_Cedro/2D/Cedro_Juan_Manuel_Lombana_Cárdenas_fase2_ss.png';
+import cedro_large_bush from '../assets/Recursos planta/Juan Lombana_Cedro/2D/Cedro_Juan_Manuel_Lombana_Cárdenas_fase3_ss.png';
+import cedro_ent from '../assets/Recursos planta/Juan Lombana_Cedro/2D/Cedro_Juan_Manuel_Lombana_Cárdenas_fase4_ss.png';
 
 // ─────────────────────────────────────────────
 // cajeto (Spritesheets animados)
 // ─────────────────────────────────────────────
-import cajeto_seed from '../assets/Recursos planta/willy-cajeto/2D/William Cubillos_Cajeto_fase1_ss.png';
-import cajeto_small_bush from '../assets/Recursos planta/willy-cajeto/2D/William Cubillos_Cajeto_fase2_ss.png';
-import cajeto_large_bush from '../assets/Recursos planta/willy-cajeto/2D/William Cubillos_Cajeto_fase3_ss.png';
-import cajeto_ent from '../assets/Recursos planta/willy-cajeto/2D/William Cubillos_Cajeto_fase4_ss.png';
+import cajeto_seed from '../assets/Recursos planta/William Santiago Cubillos Cajeto/2D/William Cubillos_Cajeto_fase1_ss.png';
+import cajeto_small_bush from '../assets/Recursos planta/William Santiago Cubillos Cajeto/2D/William Cubillos_Cajeto_fase2_ss.png';
+import cajeto_large_bush from '../assets/Recursos planta/William Santiago Cubillos Cajeto/2D/William Cubillos_Cajeto_fase3_ss.png';
+import cajeto_ent from '../assets/Recursos planta/William Santiago Cubillos Cajeto/2D/William Cubillos_Cajeto_fase4_ss.png';
 
 import carlos_correa_drago_seed from '../assets/Recursos planta/Carlos Correa_Drago/2D/Drago_Carlos_Ernesto_Correa_Rodríguez_fase1_ss.png';
 import carlos_correa_drago_small_bush from '../assets/Recursos planta/Carlos Correa_Drago/2D/Drago_Carlos_Ernesto_Correa_Rodríguez_fase2_ss.png';

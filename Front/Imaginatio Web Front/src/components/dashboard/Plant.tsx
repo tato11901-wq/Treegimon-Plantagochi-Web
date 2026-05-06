@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "preact/hooks";
-import { isPlantInfoOpen, activePlantId } from "../../store/resourceStore";
+import { isPlantInfoOpen, activePlantId, isMuted, globalVolume } from "../../store/resourceStore";
 import {
   plantPhase,
   plantSpeciesId,
@@ -27,6 +27,12 @@ import abonoSpriteSheet from '../../assets/Recursos estadosPlanta/Abono.png';
 import solSpriteSheet from '../../assets/Recursos estadosPlanta/Sol.png';
 import criticalParticlesSprite from '../../assets/Recursos estadosPlanta/Critical Particles.png';
 import dangerParticlesSprite from '../../assets/Recursos estadosPlanta/Danger Particles.png';
+
+// Audios
+import abonoAudioSrc from '../../assets/Sonidos Interacciones/Abono.mp3';
+import regarAudioSrc from '../../assets/Sonidos Interacciones/Regar.mp3';
+import solAudioSrc from '../../assets/Sonidos Interacciones/Sol.mp3';
+import evolucionAudioSrc from '../../assets/Sonidos Interacciones/dogwolf123-retro-power-up-sound-03-474809.mp3';
 
 export const Plant = () => {
   const [displayPhase, setDisplayPhase] = useState<PlantPhase>(plantPhase.value);
@@ -72,6 +78,48 @@ export const Plant = () => {
     }
   }, [plantSpeciesId.value]);
 
+  // Refs de audio
+  const waterAudioRef = useRef<HTMLAudioElement>(null);
+  const abonoAudioRef = useRef<HTMLAudioElement>(null);
+  const solAudioRef = useRef<HTMLAudioElement>(null);
+  const evolucionAudioRef = useRef<HTMLAudioElement>(null);
+
+  useEffect(() => {
+    if (isWatering.value && waterAudioRef.current && !isMuted.value) {
+      waterAudioRef.current.volume = 0.3 * globalVolume.value;
+      waterAudioRef.current.currentTime = 0;
+      waterAudioRef.current.play().catch(() => {});
+    }
+  }, [isWatering.value, isMuted.value, globalVolume.value]);
+
+  useEffect(() => {
+    if (isFertilizing.value && abonoAudioRef.current && !isMuted.value) {
+      abonoAudioRef.current.volume = 0.3 * globalVolume.value;
+      abonoAudioRef.current.currentTime = 0;
+      abonoAudioRef.current.play().catch(() => {});
+    }
+  }, [isFertilizing.value, isMuted.value, globalVolume.value]);
+
+  useEffect(() => {
+    if (isSunning.value && solAudioRef.current && !isMuted.value) {
+      solAudioRef.current.volume = 0.8 * globalVolume.value;
+      solAudioRef.current.currentTime = 0;
+      solAudioRef.current.play().catch(() => {});
+    }
+  }, [isSunning.value, isMuted.value, globalVolume.value]);
+
+  useEffect(() => {
+    if (isEvolving.value && evolucionAudioRef.current && !isMuted.value) {
+      evolucionAudioRef.current.volume = 0.5 * globalVolume.value;
+      evolucionAudioRef.current.currentTime = 0;
+      // Retraso de un segundo pedido por el usuario para sincronizar con el final de la animación
+      const timer = setTimeout(() => {
+        evolucionAudioRef.current?.play().catch(() => {});
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [isEvolving.value, isMuted.value, globalVolume.value]);
+
   const config = getSpriteConfig(displaySpecies, plantUnitySubid.value, displayPhase);
   const isAnimated = config.frameCount > 1;
   const isDead = plantHealth.value <= 0;
@@ -106,6 +154,12 @@ export const Plant = () => {
 
   return (
     <div className="relative mb-24 flex flex-col items-center pointer-events-none group">
+      {/* Elementos de audio */}
+      <audio ref={waterAudioRef} src={regarAudioSrc} />
+      <audio ref={abonoAudioRef} src={abonoAudioSrc} />
+      <audio ref={solAudioRef} src={solAudioSrc} />
+      <audio ref={evolucionAudioRef} src={evolucionAudioSrc} />
+
       <div className="w-80 h-auto flex items-center justify-center z-20 relative transition-transform duration-300 group-hover:scale-105">
 
         {/* Sprite principal: Lápida si está muerta, de lo contrario animado o estático */}

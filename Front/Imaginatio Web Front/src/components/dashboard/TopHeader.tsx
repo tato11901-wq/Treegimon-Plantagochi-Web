@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "preact/hooks";
-import { isInventoryOpen, isHelpModalOpen, isCreditsModalOpen, plantName, activePlantId, username } from '../../store/resourceStore';
+import { isInventoryOpen, isHelpModalOpen, isCreditsModalOpen, plantName, activePlantId, username, isMuted, globalVolume } from '../../store/resourceStore';
 import { fetchMyActivePlant, renamePlant } from '../../store/apiClient';
 import { syncPlantState, plantHealth, plantWaterProgress, plantSunProgress, plantPhase, EVOLUTION_REQUIREMENTS } from '../../store/plantStore';
 import panelHudSuperior from '../../assets/Recursos web media/Panel_HUD_superior.png';
@@ -12,6 +12,35 @@ export default function TopHeader({ onLogout }: { onLogout?: () => void }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const volumePanelRef = useRef<HTMLDivElement>(null);
+  const volumeButtonRef = useRef<HTMLDivElement>(null);
+  const [isVolumePanelOpen, setIsVolumePanelOpen] = useState(false);
+
+  // Cerrar panel de volumen al presionar Esc o clic fuera
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsVolumePanelOpen(false);
+    };
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        volumePanelRef.current && 
+        !volumePanelRef.current.contains(e.target as Node) &&
+        volumeButtonRef.current &&
+        !volumeButtonRef.current.contains(e.target as Node)
+      ) {
+        setIsVolumePanelOpen(false);
+      }
+    };
+
+    if (isVolumePanelOpen) {
+      window.addEventListener("keydown", handleKeyDown);
+      window.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isVolumePanelOpen]);
 
   // Fetch plant name on mount
   useEffect(() => {
@@ -214,6 +243,55 @@ export default function TopHeader({ onLogout }: { onLogout?: () => void }) {
             className="w-16 h-16 flex items-center justify-center cursor-pointer transition-all duration-150 ease-in-out hover:opacity-60 active:scale-90"
           >
             <img src={btnAyuda.src} alt="Ayuda" className="w-full h-full object-contain" />
+          </div>
+
+          {/* Botón de Sonido (Abre panel) */}
+          <div className="relative">
+            <div
+              ref={volumeButtonRef}
+              onClick={() => setIsVolumePanelOpen(!isVolumePanelOpen)}
+              className={`w-16 h-16 flex items-center justify-center cursor-pointer transition-all duration-150 ease-in-out hover:opacity-80 active:scale-90 bg-[#f5e6c8] border-4 rounded-2xl shadow-[0_4px_0_#4e341b] font-black text-2xl
+                ${isMuted.value ? 'border-red-800 text-red-800 opacity-60' : 'border-[#4e341b] text-[#4e341b]'}`}
+              title="Ajustar volumen"
+            >
+              {isMuted.value || globalVolume.value === 0 ? "🔇" : "🔊"}
+            </div>
+
+            {/* Panel de volumen */}
+            {isVolumePanelOpen && (
+              <div 
+                ref={volumePanelRef}
+                className="absolute top-20 right-0 w-48 bg-[#f5e6c8] border-4 border-[#4e341b] rounded-2xl shadow-[0_8px_0_#4e341b] p-4 flex flex-col gap-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-[#4e341b] text-sm uppercase">Volumen</span>
+                  <button 
+                    onClick={() => isMuted.value = !isMuted.value}
+                    className={`text-xl transition-transform active:scale-90 ${isMuted.value ? 'opacity-50' : 'opacity-100'}`}
+                  >
+                    {isMuted.value ? "🔇" : "🔊"}
+                  </button>
+                </div>
+                
+                <input 
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={isMuted.value ? 0 : globalVolume.value}
+                  onInput={(e) => {
+                    const val = parseFloat((e.target as HTMLInputElement).value);
+                    globalVolume.value = val;
+                    if (val > 0) isMuted.value = false;
+                  }}
+                  className="w-full h-3 bg-[#4e341b]/20 rounded-lg appearance-none cursor-pointer accent-[#4e341b]"
+                />
+                
+                <div className="text-right text-[10px] font-black text-[#4e341b]/60 uppercase">
+                  {Math.round((isMuted.value ? 0 : globalVolume.value) * 100)}%
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Botón Cerrar Sesión */}

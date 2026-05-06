@@ -92,6 +92,7 @@ export interface TreePlant {
 export interface TreeSeed {
   seed_id:     string;  // [3D] ID opaco
   species_id:  string;  // [3D] Especie a la que corresponde
+  subid?:      string;  // [3D] Autor o variante específica
   categoria:   string;  // [3D] Categoría
   recibida_en: number;  // [3D] Timestamp ms
 }
@@ -430,6 +431,17 @@ export function applyTreeDataFrom3D(incoming: ImaginatioTreeData): {
 
   saveTreeData(current);
   return { nuevasSemillas, plantasActualizadas };
+}
+
+/**
+ * Limpia la lista de semillas del .tree local. 
+ * Se debe llamar después de que las semillas hayan sido procesadas (instanciadas)
+ * para evitar que se vuelvan a cargar si se re-importa el mismo archivo.
+ */
+export function consumeSeeds(): void {
+  const current = loadTreeData();
+  current.semillas = [];
+  saveTreeData(current);
 }
 
 // ═══════════════════════════════════════════════════════
