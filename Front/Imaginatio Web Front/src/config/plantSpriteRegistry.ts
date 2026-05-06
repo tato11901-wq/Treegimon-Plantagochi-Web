@@ -28,21 +28,8 @@ import pasto_large_bush from '../assets/Recursos planta/William Santiago Cubillo
 import pasto_ent from '../assets/Recursos planta/William Santiago Cubillos_Pasto/end_idle_spritesheet.png';
 
 // ─────────────────────────────────────────────
-// NOGAL  (Imágenes estáticas)
+// cajeto (Spritesheets animados)
 // ─────────────────────────────────────────────
-import nogal_seed from '../assets/Recursos planta/Diego Martinez_Nogal/2D/Nogal_Diego_Martínez_Rodríguez_fase1_ss.png';
-import nogal_small_bush from '../assets/Recursos planta/Diego Martinez_Nogal/2D/Nogal_Diego_Martínez_Rodríguez_fase2_ss.png';
-import nogal_large_bush from '../assets/Recursos planta/Diego Martinez_Nogal/2D/Nogal_Diego_Martínez_Rodríguez_fase3_ss.png';
-import nogal_ent from '../assets/Recursos planta/Diego Martinez_Nogal/2D/Nogal_Diego_Martínez_Rodríguez_fase4_ss.png';
-
-// ─────────────────────────────────────────────
-// CEDRO  (Imágenes estáticas)
-// ─────────────────────────────────────────────
-import cedro_seed from '../assets/Recursos planta/Juan Lombana_Cedro/2D/Cedro_Juan_Manuel_Lombana_Cárdenas_fase1_ss.png';
-import cedro_small_bush from '../assets/Recursos planta/Juan Lombana_Cedro/2D/Cedro_Juan_Manuel_Lombana_Cárdenas_fase2_ss.png';
-import cedro_large_bush from '../assets/Recursos planta/Juan Lombana_Cedro/2D/Cedro_Juan_Manuel_Lombana_Cárdenas_fase3_ss.png';
-import cedro_ent from '../assets/Recursos planta/Juan Lombana_Cedro/2D/Cedro_Juan_Manuel_Lombana_Cárdenas_fase4_ss.png';
-
 // ─────────────────────────────────────────────
 // cajeto (Spritesheets animados)
 // ─────────────────────────────────────────────
@@ -326,17 +313,11 @@ function createPlantConfig(
 // Registro completo: speciesId → fase → SpriteConfig
 // ─────────────────────────────────────────────
 export const PLANT_SPRITE_REGISTRY: Record<string, Record<PlantPhase, SpriteConfig>> = {
-  pasto: createPlantConfig(
+  'William Santiago Cubillos': createPlantConfig(
     { seed: pasto_seed.src, small_bush: pasto_small_bush.src, large_bush: pasto_large_bush.src, ent: pasto_ent.src },
     { seed: 2.5, small_bush: 2.3, large_bush: 2.0, ent: 1.2 }
   ),
-  nogal: createPlantConfig(
-    { seed: nogal_seed.src, small_bush: nogal_small_bush.src, large_bush: nogal_large_bush.src, ent: nogal_ent.src }
-  ),
-  cedro: createPlantConfig(
-    { seed: cedro_seed.src, small_bush: cedro_small_bush.src, large_bush: cedro_large_bush.src, ent: cedro_ent.src }
-  ),
-  cajeto: createPlantConfig(
+  'William Santiago Cubillos Cajeto': createPlantConfig(
     { seed: cajeto_seed.src, small_bush: cajeto_small_bush.src, large_bush: cajeto_large_bush.src, ent: cajeto_ent.src },
     { seed: 0.3, small_bush: 0.5, large_bush: 1, ent: 1.3 }
   ),
@@ -552,7 +533,7 @@ export const PLANT_SPRITE_REGISTRY: Record<string, Record<PlantPhase, SpriteConf
 };
 
 /** Especie de fallback si la activa no tiene sprites registrados */
-export const FALLBACK_SPECIES = "pasto";
+export const FALLBACK_SPECIES = "William Santiago Cubillos";
 
 /** Devuelve la config de un sprite dado speciesId y subid, con fallback garantizado */
 export function getSpriteConfig(speciesId: string, subid: string | undefined, phase: PlantPhase): SpriteConfig {
