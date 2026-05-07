@@ -98,32 +98,88 @@ export default function MainUI() {
 
   if (authState === "guest") {
     return (
-      <div className="flex flex-col h-screen w-full bg-[#2d4a1d] items-center justify-center p-4">
+      <div className="flex flex-col h-screen w-full bg-[#2d4a1d] items-center justify-center p-2 sm:p-4 overflow-hidden">
         <MobileOrientationOverlay />
-        <div className="bg-[#f5e6c8] p-6 sm:p-10 rounded-3xl border-8 border-[#4e341b] shadow-2xl flex flex-col items-center gap-4 sm:gap-6 max-w-sm w-full max-h-[90vh] overflow-y-auto">
-          <span className="text-4xl sm:text-6xl animate-bounce">🌿</span>
-          <h1 className="text-2xl sm:text-3xl font-black text-[#4e341b] uppercase text-center">Imaginatio</h1>
-          <form onSubmit={handleLogin} className="flex flex-col w-full gap-3 sm:gap-4">
-            <label className="text-xs sm:text-sm font-bold text-[#4e341b] uppercase">Nombre de usuario</label>
-            <input
-              type="text"
-              value={tempName}
-              onInput={(e) => setTempName((e.target as HTMLInputElement).value)}
-              placeholder="Ej: Jardinero88"
-              className="w-full px-4 py-2 sm:py-3 rounded-xl border-4 border-[#8B4513] bg-[#fff9eb] text-black font-bold focus:outline-none focus:ring-2 ring-green-600"
-            />
-            <button
-              disabled={loading}
-              className="w-full bg-[#1b4332] hover:bg-[#2d6a4f] text-white font-black py-3 sm:py-4 rounded-xl shadow-lg transition transform active:scale-95 disabled:opacity-50"
+        <div
+          className="bg-[#f5e6c8] rounded-3xl border-[6px] sm:border-8 border-[#4e341b] shadow-2xl w-full overflow-hidden"
+          style={{ maxWidth: '520px', maxHeight: '92vh' }}
+        >
+          <div
+            className="flex items-center gap-3 p-4 sm:p-8"
+            style={{
+              /* On short viewports (mobile landscape), use row layout */
+              flexDirection: window.innerHeight < 500 ? 'row' : 'column',
+              justifyContent: window.innerHeight < 500 ? 'center' : 'center',
+              alignItems: 'center',
+            }}
+          >
+            {/* Branding section */}
+            <div
+              className="flex flex-col items-center shrink-0"
+              style={{
+                gap: window.innerHeight < 500 ? '0.25rem' : '0.75rem',
+              }}
             >
-              {loading ? "CARGANDO..." : "ENTRAR AL JARDÍN"}
-            </button>
-          </form>
-          <p className="text-[11px] text-[#4e341b]/70 text-center leading-relaxed">
-            Tu progreso se guarda en este navegador.<br />
-            <span className="font-bold">¿Ya tienes cuenta? Ingresa el mismo nombre</span>
-            {" "}para retomar tu jardín donde lo dejaste. 🌱
-          </p>
+              <span
+                className="animate-bounce"
+                style={{ fontSize: window.innerHeight < 500 ? '2rem' : '3.5rem' }}
+              >
+                🌿
+              </span>
+              <h1
+                className="font-black text-[#4e341b] uppercase text-center"
+                style={{ fontSize: window.innerHeight < 500 ? '1.1rem' : '1.75rem' }}
+              >
+                Plantagochi
+              </h1>
+            </div>
+
+            {/* Form section */}
+            <div className="flex flex-col w-full gap-2 sm:gap-3">
+              <form onSubmit={handleLogin} className="flex flex-col w-full gap-2 sm:gap-3">
+                <label
+                  className="font-bold text-[#4e341b] uppercase"
+                  style={{ fontSize: window.innerHeight < 500 ? '0.65rem' : '0.75rem' }}
+                >
+                  Nombre de usuario
+                </label>
+                <input
+                  type="text"
+                  value={tempName}
+                  onInput={(e) => setTempName((e.target as HTMLInputElement).value)}
+                  placeholder="Ej: Jardinero88"
+                  className="w-full px-3 rounded-xl border-4 border-[#8B4513] bg-[#fff9eb] text-black font-bold focus:outline-none focus:ring-2 ring-green-600"
+                  style={{
+                    paddingTop: window.innerHeight < 500 ? '0.35rem' : '0.625rem',
+                    paddingBottom: window.innerHeight < 500 ? '0.35rem' : '0.625rem',
+                    fontSize: window.innerHeight < 500 ? '0.85rem' : '1rem',
+                  }}
+                />
+                <button
+                  disabled={loading}
+                  className="w-full bg-[#1b4332] hover:bg-[#2d6a4f] text-white font-black rounded-xl shadow-lg transition transform active:scale-95 disabled:opacity-50"
+                  style={{
+                    paddingTop: window.innerHeight < 500 ? '0.5rem' : '0.75rem',
+                    paddingBottom: window.innerHeight < 500 ? '0.5rem' : '0.75rem',
+                    fontSize: window.innerHeight < 500 ? '0.8rem' : '1rem',
+                  }}
+                >
+                  {loading ? "CARGANDO..." : "ENTRAR AL JARDÍN"}
+                </button>
+              </form>
+              <p
+                className="text-[#4e341b]/70 text-center leading-relaxed"
+                style={{
+                  fontSize: window.innerHeight < 500 ? '0.55rem' : '0.65rem',
+                  display: window.innerHeight < 500 ? 'none' : 'block',
+                }}
+              >
+                Tu progreso se guarda en este navegador.<br />
+                <span className="font-bold">¿Ya tienes cuenta? Ingresa el mismo nombre</span>
+                {" "}para retomar tu jardín donde lo dejaste. 🌱
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -144,13 +200,26 @@ export default function MainUI() {
 
       {/* Stage escalado */}
       <div
-        className="absolute top-1/2 left-1/2 shadow-2xl overflow-hidden"
-        style={{
-          width: `${stage.virtualWidth}px`,
-          height: `${stage.virtualHeight}px`,
-          transform: `translate(-50%, -50%) scale(${stage.scale})`,
-          flexShrink: 0
-        }}
+        className="absolute shadow-2xl overflow-hidden"
+        style={
+          stage.isMobile
+            ? {
+                width: `${stage.virtualWidth}px`,
+                height: `${stage.virtualHeight}px`,
+                left: `${stage.offsetX}px`,
+                top: `${stage.offsetY}px`,
+                transform: `scale(${stage.scale})`,
+                transformOrigin: '0 0',
+              }
+            : {
+                width: `${stage.virtualWidth}px`,
+                height: `${stage.virtualHeight}px`,
+                left: '50%',
+                top: '50%',
+                transform: `translate(-50%, -50%) scale(${stage.scale})`,
+                flexShrink: 0,
+              }
+        }
       >
         <div className="absolute inset-0 z-0">
           <img src={fondoMain.src} alt="Escenario" className="w-full h-full object-cover" />
