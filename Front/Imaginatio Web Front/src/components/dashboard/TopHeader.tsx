@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "preact/hooks";
-import { isInventoryOpen, isHelpModalOpen, isCreditsModalOpen, plantName, activePlantId, username, isMuted, globalVolume } from '../../store/resourceStore';
+import { isInventoryOpen, isHelpModalOpen, isCreditsModalOpen, plantName, activePlantId, username, isMuted, globalVolume, isUnityViewerOpen } from '../../store/resourceStore';
 import { fetchMyActivePlant, renamePlant } from '../../store/apiClient';
 import { syncPlantState, plantHealth, plantWaterProgress, plantSunProgress, plantPhase, EVOLUTION_REQUIREMENTS } from '../../store/plantStore';
 import panelHudSuperior from '../../assets/Recursos web media/Panel_HUD_superior.png';
@@ -224,7 +224,17 @@ export default function TopHeader({ onLogout }: { onLogout?: () => void }) {
         </div>
 
         {/* Right buttons: Créditos, Inventario, Ayuda y Cerrar Sesión */}
-        <div className="flex gap-5 shrink-0 mr-10 items-center">
+        <div class="flex gap-5 shrink-0 mr-10 items-center">
+
+          {/* Botón Jugar en 3D (Unity Viewer) */}
+          <div
+            id="btn-open-unity-viewer"
+            onClick={() => isUnityViewerOpen.value = true}
+            title="Abrir juego 3D Treegimon (Unity WebGL)"
+            class="w-16 h-16 flex items-center justify-center cursor-pointer transition-all duration-150 ease-in-out hover:opacity-80 active:scale-90 bg-[#1b4332] border-4 border-[#2d6a4f] rounded-2xl shadow-[0_4px_0_#1b4332] text-white font-black text-2xl"
+          >
+            🎮
+          </div>
           <div
             onClick={() => isCreditsModalOpen.value = true}
             className="w-16 h-16 flex items-center justify-center cursor-pointer transition-all duration-150 ease-in-out hover:opacity-60 active:scale-90 bg-[#f5e6c8] border-4 border-[#4e341b] rounded-2xl shadow-[0_4px_0_#4e341b] text-[#4e341b] font-black text-2xl"

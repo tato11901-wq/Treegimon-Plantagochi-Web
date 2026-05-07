@@ -16,6 +16,7 @@ import CreditsModal from "./dashboard/CreditsModal";
 import PlantNamingModal from "./dashboard/PlantNamingModal";
 import MobileOrientationOverlay from "./MobileOrientationOverlay";
 import { isNamingModalOpen, isHelpModalOpen } from "../store/resourceStore";
+import UnityViewer from "./dashboard/UnityViewer";
 
 import { useScale } from "../hooks/useScale";
 import Water from "./MiniGames/water";
@@ -248,6 +249,9 @@ export default function MainUI() {
           {/* 🌳 Modal informativo del Ent y Muerte */}
           <EntWelcomeModal />
           <DeathTutorialModal />
+
+          {/* 🎮 Visor Unity WebGL */}
+          <UnityViewer />
         </div>
       </div>
 
