@@ -239,17 +239,17 @@ export default function MainUI() {
           <HelpModal />
           <CreditsModal />
           <PlantNamingModal />
+
+          {/* 🔥 Minijuegos como overlay */}
+          <Water />
+          <Compost />
+          <Sun />
+
+          {/* 🌳 Modal informativo del Ent y Muerte */}
+          <EntWelcomeModal />
+          <DeathTutorialModal />
         </div>
       </div>
-
-      {/* 🔥 Minijuegos como overlay GLOBAL */}
-      <Water />
-      <Compost />
-      <Sun />
-
-      {/* 🌳 Modal informativo del Ent (solo primera vez) */}
-      <EntWelcomeModal />
-      <DeathTutorialModal />
 
     </div>
   );
