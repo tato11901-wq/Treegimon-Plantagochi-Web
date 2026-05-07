@@ -14,6 +14,7 @@ import EntWelcomeModal from "./dashboard/EntWelcomeModal";
 import DeathTutorialModal from "./dashboard/DeathTutorialModal";
 import CreditsModal from "./dashboard/CreditsModal";
 import PlantNamingModal from "./dashboard/PlantNamingModal";
+import MobileOrientationOverlay from "./MobileOrientationOverlay";
 import { isNamingModalOpen, isHelpModalOpen } from "../store/resourceStore";
 
 import { useScale } from "../hooks/useScale";
@@ -98,21 +99,22 @@ export default function MainUI() {
   if (authState === "guest") {
     return (
       <div className="flex flex-col h-screen w-full bg-[#2d4a1d] items-center justify-center p-4">
-        <div className="bg-[#f5e6c8] p-10 rounded-3xl border-8 border-[#4e341b] shadow-2xl flex flex-col items-center gap-6 max-w-sm w-full">
-          <span className="text-6xl animate-bounce">🌿</span>
-          <h1 className="text-3xl font-black text-[#4e341b] uppercase text-center">Imaginatio</h1>
-          <form onSubmit={handleLogin} className="flex flex-col w-full gap-4">
-            <label className="text-sm font-bold text-[#4e341b] uppercase">Nombre de usuario</label>
+        <MobileOrientationOverlay />
+        <div className="bg-[#f5e6c8] p-6 sm:p-10 rounded-3xl border-8 border-[#4e341b] shadow-2xl flex flex-col items-center gap-4 sm:gap-6 max-w-sm w-full max-h-[90vh] overflow-y-auto">
+          <span className="text-4xl sm:text-6xl animate-bounce">🌿</span>
+          <h1 className="text-2xl sm:text-3xl font-black text-[#4e341b] uppercase text-center">Imaginatio</h1>
+          <form onSubmit={handleLogin} className="flex flex-col w-full gap-3 sm:gap-4">
+            <label className="text-xs sm:text-sm font-bold text-[#4e341b] uppercase">Nombre de usuario</label>
             <input
               type="text"
               value={tempName}
               onInput={(e) => setTempName((e.target as HTMLInputElement).value)}
               placeholder="Ej: Jardinero88"
-              className="w-full px-4 py-3 rounded-xl border-4 border-[#8B4513] bg-[#fff9eb] text-black font-bold focus:outline-none focus:ring-2 ring-green-600"
+              className="w-full px-4 py-2 sm:py-3 rounded-xl border-4 border-[#8B4513] bg-[#fff9eb] text-black font-bold focus:outline-none focus:ring-2 ring-green-600"
             />
             <button
               disabled={loading}
-              className="w-full bg-[#1b4332] hover:bg-[#2d6a4f] text-white font-black py-4 rounded-xl shadow-lg transition transform active:scale-95 disabled:opacity-50"
+              className="w-full bg-[#1b4332] hover:bg-[#2d6a4f] text-white font-black py-3 sm:py-4 rounded-xl shadow-lg transition transform active:scale-95 disabled:opacity-50"
             >
               {loading ? "CARGANDO..." : "ENTRAR AL JARDÍN"}
             </button>
@@ -131,6 +133,9 @@ export default function MainUI() {
 
   return (
     <div className="w-screen h-screen bg-[#2d4a1d] relative overflow-hidden text-slate-100 transition-all select-none">
+
+      {/* Mobile Portrait Orientation Overlay */}
+      <MobileOrientationOverlay />
 
       {/* Global Background */}
       <div className="absolute inset-0 pointer-events-none">
