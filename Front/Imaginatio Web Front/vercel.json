@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "headers": [
     {
-      "source": "/Build/(.*)\\.framework\\.js\\.br",
+      "source": "/unity-webgl/Build/(.*)\\.framework\\.js\\.br",
       "headers": [
         {
           "key": "Content-Type",
@@ -15,7 +15,7 @@
       ]
     },
     {
-      "source": "/Build/(.*)\\.wasm\\.br",
+      "source": "/unity-webgl/Build/(.*)\\.wasm\\.br",
       "headers": [
         {
           "key": "Content-Type",
@@ -28,7 +28,7 @@
       ]
     },
     {
-      "source": "/Build/(.*)\\.data\\.br",
+      "source": "/unity-webgl/Build/(.*)\\.data\\.br",
       "headers": [
         {
           "key": "Content-Type",
