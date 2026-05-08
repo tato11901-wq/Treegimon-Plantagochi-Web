@@ -125,27 +125,19 @@ function getPlantCategory(plant: BackendPlant): string {
 import { SpriteAnimator } from "./SpriteAnimator";
 
 function PlantFirstFrame({ config, size = 56 }: { config: SpriteConfig; size?: number }) {
-  // Si la escala es menor a 1 (como el drago que es 0.3), usamos 1.2 para que se vea grande en el inventario.
-  // Si la escala es mayor a 1 (como el pasto que es 2.5), usamos un multiplicador extra (x2.5) para compensar su tamaño real pequeño.
-  const inventoryScale = config.scale < 1 ? 1.2 : config.scale * 2.5;
+  const aspect = config.frameWidth / config.frameHeight;
+  const w = Math.round(size * aspect);
 
   return (
-    <div style={{ 
-      width: size, 
-      height: size, 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center',
-      overflow: 'hidden' 
-    }}>
+    <div style={{ width: w, height: size, overflow: "hidden", flexShrink: 0 }}>
       <SpriteAnimator
         src={config.src}
         frameWidth={config.frameWidth}
         frameHeight={config.frameHeight}
         frameCount={config.frameCount}
-        scale={inventoryScale}
+        scale={1}
         fps={10}
-        className="[image-rendering:pixelated]"
+        className="w-full h-full"
       />
     </div>
   );

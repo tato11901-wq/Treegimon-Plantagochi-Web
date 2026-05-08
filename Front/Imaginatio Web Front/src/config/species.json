@@ -13,7 +13,7 @@
   },
   "cajeto": {
     "id": "cajeto",
-    "subids": ["William Santiago Cubillos"],
+    "subids": ["cajeto"],
     "common_name": "Cajeto",
     "scientific_name": "Citharexylum subflavescens",
     "classification": "Solar",
@@ -136,7 +136,7 @@
   },
   "nogal": {
     "id": "nogal",
-    "subids": ["Diego Martinez"],
+    "subids": ["nogal", "Diego Martinez"],
     "common_name": "Nogal",
     "scientific_name": "Juglans neotropica",
     "classification": "Montaña",
@@ -148,7 +148,7 @@
   },
   "cedro": {
     "id": "cedro",
-    "subids": ["Juan Lombana"],
+    "subids": ["cedro", "Juan Lombana"],
     "common_name": "Cedro",
     "scientific_name": "Cedrela montana",
     "classification": "Templado",
@@ -172,7 +172,7 @@
   },
   "pasto": {
     "id": "pasto",
-    "subids": ["William Santiago Cubillos"],
+    "subids": ["pasto"],
     "common_name": "Pasto",
     "scientific_name": "Cynodon dactylon.",
     "classification": "Solar",

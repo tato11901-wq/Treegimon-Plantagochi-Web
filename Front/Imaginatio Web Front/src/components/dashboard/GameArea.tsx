@@ -67,24 +67,6 @@ export default function GameArea() {
       }
    }, [isMuted.value, globalVolume.value]);
 
-   // Intento de reproducción tras la primera interacción del usuario (Autoplay bypass)
-   useEffect(() => {
-      const startAudio = () => {
-         if (audioRef.current && !isMuted.value && audioRef.current.paused) {
-            audioRef.current.play().catch(() => {});
-            // Una vez que logramos sonar, removemos los listeners
-            window.removeEventListener("click", startAudio);
-            window.removeEventListener("keydown", startAudio);
-         }
-      };
-      window.addEventListener("click", startAudio);
-      window.addEventListener("keydown", startAudio);
-      return () => {
-         window.removeEventListener("click", startAudio);
-         window.removeEventListener("keydown", startAudio);
-      };
-   }, []);
-
    const handleAudioEnded = () => {
       if (!audioRef.current || isMuted.value) return;
       

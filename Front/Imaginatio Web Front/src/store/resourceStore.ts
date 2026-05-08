@@ -110,6 +110,7 @@ export const isHelpModalOpen = signal(false);
 export const isCreditsModalOpen = signal(false);
 export const isNamingModalOpen = signal(false);
 export const isDeathTutorialOpen = signal(false);
+export const isUnityViewerOpen = signal(false);
 export const isMuted = signal(false);
 export const globalVolume = signal(0.5);
 
