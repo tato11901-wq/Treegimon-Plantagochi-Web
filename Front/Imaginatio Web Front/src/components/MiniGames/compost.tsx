@@ -55,7 +55,7 @@ export default function Compost() {
     }
   }, [])
 
-  // Temporizador visual
+  // Temporizador visual — se detiene automáticamente cuando gameState pasa a "submitting"
   useEffect(() => {
     if (gameState !== "playing") return
 
@@ -72,6 +72,8 @@ export default function Compost() {
   }, [timeLeft, gameState])
 
   const handleGameOver = async () => {
+    // Guard: si ya se disparó por el timer Y el botón al mismo tiempo, ignorar segunda llamada
+    if (gameState !== "playing") return
     setGameState("submitting")
     setMessage("Validando composta...")
     try {
@@ -95,6 +97,7 @@ export default function Compost() {
       setGameState("lost")
     }
   }
+
 
   const handleSelect = (id: number) => {
     if (gameState !== "playing") return

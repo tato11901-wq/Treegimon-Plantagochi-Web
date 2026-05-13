@@ -21,7 +21,8 @@ export default function RightSigns() {
       <div className="w-55 h-auto z-0 flex flex-col items-center justify-center relative -mt-5">
         <img src={panelEstadoComposta.src} alt="Estado Composta" className="w-full h-full object-contain" />
         <span className="absolute top-[70%] left-[55%] -translate-x-1/2 -translate-y-1/2 text-white font-bold text-2xl drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] pointer-events-none">
-          {Math.floor(compostLevel.value)}/4
+          {Math.floor(compostLevel.value)}/2
+
         </span>
       </div>
 
