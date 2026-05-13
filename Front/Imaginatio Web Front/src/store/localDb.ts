@@ -336,28 +336,39 @@ export function applyAction(plantId: string, username: string, action: "water" |
   const plant = db.plants[plantId];
   
   if (!user || !plant) throw new Error("User or Plant not found");
-  if (plant.is_dead) throw new Error("Plant is dead");
 
+  // FIX: Actualizar estado pasivo ANTES de verificar is_dead, para tener el estado real.
+  // Si la planta murió por recursos (no por la interacción del usuario), la marcamos muerta.
+  // Pero si el usuario está cuidándola AHORA, le damos una segunda oportunidad.
   updatePlantState(plant, plant.id === user.active_plant_id);
 
+  // FIX: Si updatePlantState recién mató la planta (is_dead fue seteado por decay pasivo),
+  // pero el usuario está aplicando un cuidado en este momento, revertimos la muerte
+  // y registramos la interacción. Esto evita que la planta muera en el DB justo cuando
+  // el frontend la está cuidando activamente.
+  if (plant.is_dead) {
+    plant.is_dead = false;
+    plant.health = 1; // Salud mínima; updatePlantState la recalcula abajo
+  }
+
   if (action === "water") {
-    if (user.water_inventory < 1) throw new Error("Not enough water");
-    user.water_inventory--;
+    // FIX: No descontar inventario del DB. El frontend ya lo gestiona en su propio signal.
+    // Descontar aquí causaba double-spend: el DB quedaba más bajo que el frontend,
+    // provocando que futuros checks de inventario fallaran silenciosamente.
     const reqs = getRequirements(plant.species_id, plant.stage);
     plant.water = Math.min(reqs.water, plant.water + 1);
   } else if (action === "sun") {
-    if (user.sun_inventory < 1) throw new Error("Not enough sun");
-    user.sun_inventory--;
     const reqs = getRequirements(plant.species_id, plant.stage);
     plant.sun = Math.min(reqs.sun, plant.sun + 1);
   } else if (action === "prune") {
-    if (user.fertilizer_inventory < 1) throw new Error("Not enough fertilizer");
-    user.fertilizer_inventory--;
     plant.fertilizer += 1;
   }
 
+  // Registrar la interacción ahora que el cuidado fue exitoso
   plant.last_interaction = Date.now();
-  updatePlantState(plant, plant.id === user.active_plant_id); // Recalculate health
+
+  // Recalcular salud con los nuevos recursos
+  updatePlantState(plant, plant.id === user.active_plant_id);
   
   saveDb(db);
   return { 
@@ -415,9 +426,9 @@ export function deletePlantLocal(plantId: string, username: string) {
         // Las plantas muertas dan 1 de composta
         user.compost_inventory = (user.compost_inventory || 0) + 1;
         
-        // Conversión automática: 4 de composta = 1 de abono
-        while (user.compost_inventory >= 4) {
-          user.compost_inventory -= 4;
+        // Conversión automática: 2 de composta = 1 de abono
+        while (user.compost_inventory >= 2) {
+          user.compost_inventory -= 2;
           user.fertilizer_inventory = (user.fertilizer_inventory || 0) + 1;
         }
       } else {

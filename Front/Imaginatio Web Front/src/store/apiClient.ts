@@ -141,8 +141,8 @@ export async function endMinigame(sessionToken: string, payload: Record<string, 
     reward = Math.max(0, correct - incorrect);
     user.compost_inventory = (user.compost_inventory || 0) + reward;
 
-    while (user.compost_inventory >= 4) {
-      user.compost_inventory -= 4;
+    while (user.compost_inventory >= 2) {
+      user.compost_inventory -= 2;
       user.fertilizer_inventory = (user.fertilizer_inventory || 0) + 1;
     }
 
