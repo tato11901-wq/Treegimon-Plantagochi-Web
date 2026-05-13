@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "preact/hooks"
+import { useState, useEffect, useCallback, useRef } from "preact/hooks"
 import { isCompostGameOpen, syncUserState } from "../../store/resourceStore"
 import { startMinigame, endMinigame } from "../../store/apiClient"
 import panelComposta from "../../assets/Recursos web media/Panel_Composta.png"
@@ -34,6 +34,8 @@ export default function Compost() {
   const [gameState, setGameState] = useState<GameState>("idle")
   const [sessionToken, setSessionToken] = useState<string | null>(null)
   const [message, setMessage] = useState("")
+  // Ref para evitar doble envío (stale closure safe)
+  const isSubmittingRef = useRef(false)
 
   // Solo renderiza si el estado global indica que está abierto
   if (!isCompostGameOpen.value) return null
@@ -72,8 +74,9 @@ export default function Compost() {
   }, [timeLeft, gameState])
 
   const handleGameOver = async () => {
-    // Guard: si ya se disparó por el timer Y el botón al mismo tiempo, ignorar segunda llamada
-    if (gameState !== "playing") return
+    // Ref-based guard: siempre actual, no sufre de stale closure como useState
+    if (isSubmittingRef.current) return
+    isSubmittingRef.current = true
     setGameState("submitting")
     setMessage("Validando composta...")
     try {
@@ -96,6 +99,7 @@ export default function Compost() {
       setMessage(err.message || "Error al validar el resultado")
       setGameState("lost")
     }
+    // No reseteamos isSubmittingRef: el juego termina aquí, se reinicia con handleClose
   }
 
 
@@ -111,6 +115,7 @@ export default function Compost() {
   }
 
   const handleClose = () => {
+    isSubmittingRef.current = false  // reset para la próxima partida
     setGameState("idle")
     setSelected([])
     setTimeLeft(3)

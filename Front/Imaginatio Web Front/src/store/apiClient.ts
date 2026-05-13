@@ -137,17 +137,22 @@ export async function endMinigame(sessionToken: string, payload: Record<string, 
     // IDs de los orgánicos: 1, 2, 3
     const correct = selected.filter((id: number) => [1, 2, 3].includes(id)).length;
     const incorrect = selected.filter((id: number) => ![1, 2, 3].includes(id)).length;
-    // Lógica simple: 1 compost por orgánico, -1 por inorgánico
+    // 1 composta por orgánico correcto, -1 por inorgánico seleccionado
     reward = Math.max(0, correct - incorrect);
-    user.compost_inventory = (user.compost_inventory || 0) + reward;
 
-    while (user.compost_inventory >= 2) {
-      user.compost_inventory -= 2;
-      user.fertilizer_inventory = (user.fertilizer_inventory || 0) + 1;
-    }
+    // Conversión: solo el reward de ESTA sesión + sobrante previo (máx 1),
+    // para evitar que compost acumulado de sesiones anteriores explote de golpe.
+    const prevLeftover = Math.min(user.compost_inventory || 0, 1); // máx 1 de sobrante anterior
+    const totalToConvert = prevLeftover + reward;
+    const fertilizerEarned = Math.floor(totalToConvert / 2);
+    const newLeftover = totalToConvert % 2;
+
+    user.compost_inventory = newLeftover;
+    user.fertilizer_inventory = (user.fertilizer_inventory || 0) + fertilizerEarned;
 
     user.cooldowns.compost = Date.now() + 3 * 60 * 1000; // 3 min
   }
+
 
   saveUser(user);
 
