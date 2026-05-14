@@ -352,15 +352,17 @@ export function applyAction(plantId: string, username: string, action: "water" |
   }
 
   if (action === "water") {
-    // FIX: No descontar inventario del DB. El frontend ya lo gestiona en su propio signal.
-    // Descontar aquí causaba double-spend: el DB quedaba más bajo que el frontend,
-    // provocando que futuros checks de inventario fallaran silenciosamente.
+    // La DB debe ser la fuente de la verdad. El frontend descuenta de manera optimista,
+    // pero si aquí no descontamos, los recursos reaparecen al recargar la página.
+    if (user.water_inventory > 0) user.water_inventory -= 1;
     const reqs = getRequirements(plant.species_id, plant.stage);
     plant.water = Math.min(reqs.water, plant.water + 1);
   } else if (action === "sun") {
+    if (user.sun_inventory > 0) user.sun_inventory -= 1;
     const reqs = getRequirements(plant.species_id, plant.stage);
     plant.sun = Math.min(reqs.sun, plant.sun + 1);
   } else if (action === "prune") {
+    if ((user.fertilizer_inventory || 0) > 0) user.fertilizer_inventory -= 1;
     plant.fertilizer += 1;
   }
 

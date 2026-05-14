@@ -185,6 +185,12 @@ export default function GameArea() {
       return commonName;
    };
 
+   const getScientificName = () => {
+      const speciesId = plantSpeciesId.value;
+      const speciesData = (SPECIES_JSON as any)[speciesId];
+      return speciesData?.scientific_name || "";
+   };
+
    const handleOpenWater = () => {
       if (entLocked || isWaterOnCooldown.value) return;
       isWaterGameOpen.value = true;
@@ -313,9 +319,16 @@ export default function GameArea() {
                      {plantPhase.value === "ent" ? "Información del Ent" : "Información de la Planta"}
                   </h2>
                   
-                  {/* Nombre de la especie / Autor */}
-                  <div className="text-[#4e341b]/80 text-xl lg:text-2xl font-black mb-4 text-center drop-shadow-sm italic">
-                     {getSubheader()}
+                  {/* Nombre de la especie / Autor y Nombre científico */}
+                  <div className="flex flex-col items-center mb-4 text-center">
+                     <div className="text-[#4e341b]/80 text-xl lg:text-2xl font-black drop-shadow-sm uppercase">
+                        {getSubheader()}
+                     </div>
+                     {getScientificName() && (
+                        <div className="text-[#4e341b]/60 text-base lg:text-lg italic font-bold">
+                           {getScientificName()}
+                        </div>
+                     )}
                   </div>
 
                   <div className="flex-1 w-full overflow-y-auto px-6 mt-4 text-[#4e341b] text-lg lg:text-2xl font-semibold leading-relaxed
