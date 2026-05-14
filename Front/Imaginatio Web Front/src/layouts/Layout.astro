@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import { default as SpeedInsights } from '@vercel/speed-insights/astro';
 import Analytics from '@vercel/analytics/astro';
 ---
 <!doctype html>
@@ -15,6 +16,7 @@ import Analytics from '@vercel/analytics/astro';
 	</head>
 	<body class="bg-slate-900 min-h-screen">
 		<slot />
+		<SpeedInsights />
 	</body>
 </html>
 
