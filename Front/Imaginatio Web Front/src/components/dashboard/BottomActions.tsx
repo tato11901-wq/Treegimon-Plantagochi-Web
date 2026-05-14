@@ -1,3 +1,4 @@
+import { useState } from "preact/hooks";
 import btnIluminar from '../../assets/Recursos web media/btn_iluminar.png';
 import btnRegar from '../../assets/Recursos web media/btn_regar.png';
 import btnAbonar from '../../assets/Recursos web media/btn_abonar.png';
@@ -20,14 +21,21 @@ import {
   isEntActive
 } from "../../store/plantStore";
 
+import DailyRewardModal, { hasClaimed } from "./DailyRewardModal";
+
+
 const btnImages: Record<string, ImageMetadata> = {
   Iluminar: btnIluminar,
   Regar: btnRegar,
   Abonar: btnAbonar,
 };
 
+
+
 export default function BottomActions() {
   const isAnyAnimating = isWatering.value || isFertilizing.value || isSunning.value || isEvolving.value;
+  const [showDailyReward, setShowDailyReward] = useState(false);
+  const claimed = hasClaimed();
 
   const actions = [
     { label: 'Iluminar', badge: sunInventory.value, action: applySun },
@@ -82,6 +90,41 @@ export default function BottomActions() {
           </div>
         ))}
       </div>
+
+      {/* ── Botón Recompensa Diaria — ícono en esquina inferior izquierda ──── */}
+      <div
+        id="btn-daily-reward-wrapper"
+        className={`fixed bottom-20 left-6 z-30 pointer-events-auto
+                    flex flex-col items-center gap-1
+                    transition-all duration-150 ease-in-out
+                    hover:opacity-75 active:scale-90`}
+        onClick={() => setShowDailyReward(true)}
+        title={claimed ? "Ya reclamaste tu recompensa de hoy" : "¡Reclama tu planta diaria!"}
+        role="button"
+        tabIndex={0}
+      >
+        {/* Ícono cuadrado redondeado, igual estilo que los botones de minijuego */}
+        <div
+          className={`w-16 h-16 rounded-2xl flex items-center justify-center
+                      text-3xl border-4 shadow-[0_4px_0_#1b4332]
+                      select-none cursor-pointer
+                      ${claimed
+                        ? "bg-[#4e341b]/30 border-[#4e341b]/20"
+                        : "bg-[#2d6a4f] border-[#1b4332] animate-bounce"}`}
+        >
+          {claimed ? "✅" : "🎁"}
+        </div>
+        {/* Label debajo, igual que los botones de minijuego */}
+        <span className={`text-white font-bold text-[12px] drop-shadow-md text-center leading-tight
+                          ${claimed ? "opacity-50" : ""}`}>
+          {claimed ? "Reclamada" : "Recompensa"}
+        </span>
+      </div>
+
+      {/* Modal de recompensa diaria */}
+      {showDailyReward && (
+        <DailyRewardModal onClose={() => setShowDailyReward(false)} />
+      )}
 
       {/* Banner ENT activo */}
       {isEntActive.value && (

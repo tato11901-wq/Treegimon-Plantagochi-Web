@@ -10,17 +10,23 @@ import { refreshInventory } from "../../store/resourceStore";
 const UNITY_URL = "/unity-webgl/index.html";
 
 export default function UnityViewer() {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const iframeRef   = useRef<HTMLIFrameElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [treeExported, setTreeExported] = useState(false);
-  const [syncStatus, setSyncStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
 
-  // ── Reset estado al abrir/cerrar ───────────────────────────────────────────
+  const [treeExported, setTreeExported] = useState(false);
+  const [syncStatus, setSyncStatus]     = useState<"idle" | "loading" | "ok" | "error">("idle");
+
+  // ── Al abrir: escribir .tree en localStorage para que Unity lo pueda leer ─
+  // (Funciona automáticamente si Unity usa el plugin TreeBridge.jslib)
   // IMPORTANT: useEffect MUST be before any early return (rules of hooks)
   useEffect(() => {
     if (isUnityViewerOpen.value) {
       setTreeExported(false);
       setSyncStatus("idle");
+      // Sincronizar datos frescos al localStorage antes de que Unity cargue.
+      // Si Unity tiene el .jslib, lo leerá directamente. Si no, el usuario
+      // puede exportarlo manualmente con el botón de abajo.
+      try { getFreshTreeData(); } catch (e) { /* silencioso */ }
     }
   }, [isUnityViewerOpen.value]);
 
@@ -42,9 +48,7 @@ export default function UnityViewer() {
   };
 
   // ── Importa un .tree desde Unity para sincronizar datos 3D → Web ──────────
-  const handleImportClick = () => {
-    fileInputRef.current?.click();
-  };
+  const handleImportClick = () => fileInputRef.current?.click();
 
   const handleTreeFileChange = async (e: Event) => {
     const input = e.target as HTMLInputElement;
@@ -60,8 +64,8 @@ export default function UnityViewer() {
         for (const seed of nuevasSemillas) {
           try {
             await createPlant(seed.species_id, seed.subid);
-          } catch (e) {
-            console.error(`[UnityViewer] Error creando planta para semilla ${seed.seed_id}:`, e);
+          } catch (err) {
+            console.error(`[UnityViewer] Error creando planta para semilla ${seed.seed_id}:`, err);
           }
         }
         consumeSeeds();
@@ -72,7 +76,10 @@ export default function UnityViewer() {
       console.info(
         `[UnityViewer] ✓ Plantas actualizadas: ${plantasActualizadas} | Semillas instanciadas: ${nuevasSemillas.length}`
       );
-      setTimeout(() => setSyncStatus("idle"), 3000);
+      // Cerrar automáticamente tras sincronizar con éxito
+      setTimeout(() => {
+        isUnityViewerOpen.value = false;
+      }, 1500);
     } catch (err) {
       console.error("[UnityViewer] Error al importar .tree:", err);
       setSyncStatus("error");
@@ -96,7 +103,6 @@ export default function UnityViewer() {
                   bg-[#1a2e0e]/90 border-b border-emerald-700/40 rounded-t-2xl">
 
         <div class="flex items-center gap-3">
-          {/* Ícono Unity */}
           <span class="text-2xl select-none">🎮</span>
           <div>
             <p class="text-emerald-300 font-black text-sm uppercase tracking-wide">Treegimon 3D</p>
@@ -124,19 +130,19 @@ export default function UnityViewer() {
                   d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 4v12m0 0l-4-4m4 4l4-4" />
               </svg>
             )}
-            {treeExported ? "¡Listo!" : "Exportar .tree"}
+            {treeExported ? "¡Exportado!" : "Exportar .tree"}
           </button>
 
-          {/* Importar .tree ← Unity */}
+          {/* Importar .tree ← Unity (cierra automáticamente al importar) */}
           <button
             id="btn-import-tree"
             onClick={handleImportClick}
             disabled={syncStatus === "loading"}
-            title="Importar .tree desde Unity para sincronizar datos 3D"
+            title="Importar .tree desde Unity — sincroniza y cierra automáticamente"
             class={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs
                     border transition-all duration-200 active:scale-95 disabled:cursor-wait
-                    ${syncStatus === "ok"    ? "bg-emerald-500/20 border-emerald-400/40 text-emerald-300" :
-                      syncStatus === "error" ? "bg-red-800/60 border-red-600/40 text-red-300" :
+                    ${syncStatus === "ok"      ? "bg-emerald-500/20 border-emerald-400/40 text-emerald-300" :
+                      syncStatus === "error"   ? "bg-red-800/60 border-red-600/40 text-red-300" :
                       syncStatus === "loading" ? "bg-emerald-900/60 border-emerald-700/40 text-emerald-400" :
                       "bg-sky-800/60 border-sky-600/40 text-sky-200 hover:bg-sky-700/70"}`}
           >
@@ -155,19 +161,19 @@ export default function UnityViewer() {
               </svg>
             )}
             {syncStatus === "loading" ? "Sincronizando..." :
-             syncStatus === "ok"      ? "¡Sincronizado!" :
+             syncStatus === "ok"      ? "¡Sincronizado! Cerrando..." :
              syncStatus === "error"   ? "Error en .tree" :
-                                        "Importar .tree"}
+                                        "Importar .tree y cerrar"}
           </button>
 
           {/* Separador */}
           <div class="w-px h-6 bg-emerald-700/40 mx-1" />
 
-          {/* Cerrar */}
+          {/* Cerrar sin sincronizar */}
           <button
             id="btn-close-unity-viewer"
             onClick={handleClose}
-            title="Cerrar visor 3D"
+            title="Cerrar visor 3D sin sincronizar"
             class="w-8 h-8 flex items-center justify-center rounded-lg bg-red-900/50 border border-red-700/40
                    text-red-300 hover:bg-red-700/60 transition-all duration-200 active:scale-90 font-black text-sm"
           >
@@ -193,11 +199,11 @@ export default function UnityViewer() {
       {/* ── Hint de flujo de trabajo ───────────────────────────────────────── */}
       <div class="w-full max-w-[1000px] flex items-center justify-center gap-6 py-2
                   text-emerald-600/70 text-[11px] font-medium select-none">
-        <span>① Haz clic en <strong class="text-emerald-400">Exportar .tree</strong> para guardar tus datos</span>
+        <span>① <strong class="text-emerald-400">Exportar .tree</strong> → importarlo en Unity</span>
         <span class="text-emerald-700/50">→</span>
-        <span>② Importa el archivo en el menú de Unity</span>
+        <span>② Juega en 3D</span>
         <span class="text-emerald-700/50">→</span>
-        <span>③ Cuando termines, <strong class="text-emerald-400">Importar .tree</strong> para sincronizar</span>
+        <span>③ Exportar desde Unity → <strong class="text-emerald-400">Importar .tree y cerrar</strong></span>
       </div>
 
       {/* Input oculto para leer el .tree */}

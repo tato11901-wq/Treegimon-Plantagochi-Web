@@ -71,6 +71,7 @@ export async function login(username: string) {
 
 // ── Minigames ──
 export async function startMinigame(gameType: string) {
+
   const username = requireUser();
   const user = getUser(username);
   if (!user) throw new Error("Usuario no encontrado");
@@ -101,6 +102,8 @@ export async function startMinigame(gameType: string) {
     (user as any)._temp_sun_tier = 1;
     saveUser(user);
   } else if (gameType === "compost") {
+    const uniqueToken = `compost_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    result.session_token = uniqueToken;
     result.duration_seconds = 3;
     // Provide a mocked list of items
     result.items = [
@@ -132,22 +135,49 @@ export async function endMinigame(sessionToken: string, payload: Record<string, 
     user.water_inventory += reward;
     user.cooldowns.water = Date.now() + 10 * 60 * 1000; // 10 min
   } 
-  else if (sessionToken === "compost") {
+  else if (sessionToken.startsWith("compost_") || sessionToken === "compost") {
+    if (sessionToken.startsWith("compost_")) {
+      const usedTokens = (globalThis as any)._usedCompostTokens;
+      if (usedTokens?.has(sessionToken)) {
+        console.warn("[endMinigame] Previniendo doble ejecución fantasma:", sessionToken);
+        return { message: "Sesión ya procesada.", reward: 0, user };
+      }
+      if (!usedTokens) (globalThis as any)._usedCompostTokens = new Set<string>();
+      (globalThis as any)._usedCompostTokens.add(sessionToken);
+      
+      // Mantenemos solo los últimos 2 tokens para evitar que la memoria crezca.
+      // (2 son más que suficientes porque solo necesitamos proteger la partida actual inmediata).
+      if ((globalThis as any)._usedCompostTokens.size > 2) {
+        const firstItem = (globalThis as any)._usedCompostTokens.values().next().value;
+        (globalThis as any)._usedCompostTokens.delete(firstItem);
+      }
+    }
+
     const selected = payload.selected_items || [];
-    // IDs de los orgánicos: 1, 2, 3
     const correct = selected.filter((id: number) => [1, 2, 3].includes(id)).length;
     const incorrect = selected.filter((id: number) => ![1, 2, 3].includes(id)).length;
-    // Lógica simple: 1 compost por orgánico, -1 por inorgánico
     reward = Math.max(0, correct - incorrect);
-    user.compost_inventory = (user.compost_inventory || 0) + reward;
 
-    while (user.compost_inventory >= 4) {
-      user.compost_inventory -= 4;
-      user.fertilizer_inventory = (user.fertilizer_inventory || 0) + 1;
+    // Convertir SOLO el reward de esta sesión (no el acumulado previo).
+    // El sobrante se suma al inventario; si llega a 2 se convierte y se resetea a 0
+    // para que el cartel nunca muestre 2/2.
+    const fertilizerFromReward = Math.floor(reward / 2);
+    const leftoverFromReward   = reward % 2;
+
+    const newCompost = (user.compost_inventory || 0) + leftoverFromReward;
+    if (newCompost >= 2) {
+      // Auto-conversión: 2 composta → 1 abono extra, resetear a 0
+      user.compost_inventory    = 0;
+      user.fertilizer_inventory = (user.fertilizer_inventory || 0) + fertilizerFromReward + 1;
+    } else {
+      user.compost_inventory    = newCompost;
+      user.fertilizer_inventory = (user.fertilizer_inventory || 0) + fertilizerFromReward;
     }
 
     user.cooldowns.compost = Date.now() + 3 * 60 * 1000; // 3 min
   }
+
+
 
   saveUser(user);
 

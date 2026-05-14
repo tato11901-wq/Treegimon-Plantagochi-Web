@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import { default as SpeedInsights } from '@vercel/speed-insights/astro';
+import Analytics from '@vercel/analytics/astro';
 ---
 <!doctype html>
 <html lang="en">
@@ -11,6 +12,7 @@ import { default as SpeedInsights } from '@vercel/speed-insights/astro';
 		<link rel="icon" href="/favicon.ico" />
 		<meta name="generator" content={Astro.generator} />
 		<title>Astro Basics</title>
+		<Analytics />
 	</head>
 	<body class="bg-slate-900 min-h-screen">
 		<slot />

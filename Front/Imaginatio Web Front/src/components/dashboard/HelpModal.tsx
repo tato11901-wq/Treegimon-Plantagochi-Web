@@ -96,7 +96,8 @@ export default function HelpModal() {
                 <div className="flex flex-col items-center text-center gap-3 bg-[#f5e6c8] p-4 rounded-2xl border-2 border-[#d4bc96]">
                   <img src={btnMinijuegoComposta.src} alt="Composta" className="w-20 h-20 object-contain hover:scale-110 transition-transform" />
                   <h4 className="font-bold text-[#4e341b] text-xl">Compostaje</h4>
-                  <p className="text-sm font-medium text-[#5c3e21]">Haz click sobre los recursos organicos para ganar composta. ¡Cada 4 de composta te dan 1 de Abono!</p>
+                  <p class="text-sm font-medium text-[#5c3e21]">Haz click sobre los recursos organicos para ganar composta. ¡Cada <strong>2</strong> de composta te dan 1 de Abono!</p>
+
                 </div>
               </div>
             </div>

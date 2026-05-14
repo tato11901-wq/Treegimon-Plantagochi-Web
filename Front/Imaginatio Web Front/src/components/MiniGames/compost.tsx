@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "preact/hooks"
+import { useState, useEffect, useCallback, useRef } from "preact/hooks"
 import { isCompostGameOpen, syncUserState } from "../../store/resourceStore"
 import { startMinigame, endMinigame } from "../../store/apiClient"
 import panelComposta from "../../assets/Recursos web media/Panel_Composta.png"
@@ -34,6 +34,12 @@ export default function Compost() {
   const [gameState, setGameState] = useState<GameState>("idle")
   const [sessionToken, setSessionToken] = useState<string | null>(null)
   const [message, setMessage] = useState("")
+  // Ref para evitar doble envío (stale closure safe)
+  const isSubmittingRef = useRef(false)
+  const timerRef = useRef<number | null>(null)
+  const selectedRef = useRef<number[]>([])
+
+
 
   // Solo renderiza si el estado global indica que está abierto
   if (!isCompostGameOpen.value) return null
@@ -55,46 +61,80 @@ export default function Compost() {
     }
   }, [])
 
-  // Temporizador visual
+  // ── Temporizador: un único intervalo por sesión, controlado por gameState ──
+  // El patrón anterior (useEffect por [timeLeft]) re-creaba el intervalo cada
+  // segundo y podía disparar handleGameOver varias veces por race condition.
   useEffect(() => {
-    if (gameState !== "playing") return
-
-    if (timeLeft <= 0) {
-      handleGameOver()
+    if (gameState !== "playing") {
+      if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
       return
     }
-
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => prev - 1)
-    }, 1000)
-
-    return () => clearInterval(timer)
-  }, [timeLeft, gameState])
-
-  const handleGameOver = async () => {
-    setGameState("submitting")
-    setMessage("Validando composta...")
-    try {
-      if (!sessionToken) throw new Error("No hay token de sesión")
-
-      const res = await endMinigame(sessionToken, {
-        selected_items: selected
+    timerRef.current = window.setInterval(() => {
+      setTimeLeft(prev => {
+        const next = prev - 1
+        if (next <= 0) {
+          clearInterval(timerRef.current!); timerRef.current = null
+          setTimeout(() => handleTimeout(), 0)
+          return 0
+        }
+        return next
       })
+    }, 1000)
+    return () => { if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null } }
+  }, [gameState])
 
-      syncUserState(res.user)
-
-      if (res.reward > 0) {
-        setMessage(`¡Excelente! Obtuviste ${res.reward} unidades de composta.`)
-        setGameState("won")
-      } else {
-        setMessage("No se obtuvo composta. Asegúrate de seleccionar solo los orgánicos.")
+  // ── Guard definitivo: ref + IIFE async ────────────────────────────────────
+  const handleGameOverSafe = () => {
+    if (isSubmittingRef.current) return
+    isSubmittingRef.current = true
+    void (async () => {
+      setGameState("submitting")
+      setMessage("Validando composta...")
+      try {
+        if (!sessionToken) throw new Error("No hay token de sesión")
+        const res = await endMinigame(sessionToken, { selected_items: selectedRef.current })
+        syncUserState(res.user)
+        if (res.reward > 0) {
+          setMessage(`¡Excelente! Obtuviste ${res.reward} unidades de composta.`)
+          setGameState("won")
+        } else {
+          setMessage("No se obtuvo composta. Asegúrate de seleccionar solo los orgánicos.")
+          setGameState("lost")
+        }
+      } catch (err: any) {
+        setMessage(err.message || "Error al validar el resultado")
         setGameState("lost")
       }
-    } catch (err: any) {
-      setMessage(err.message || "Error al validar el resultado")
-      setGameState("lost")
-    }
+    })()
   }
+
+  // Manejador para cuando el tiempo se agota sin presionar el botón
+  const handleTimeout = () => {
+    if (isSubmittingRef.current) return
+    isSubmittingRef.current = true
+    void (async () => {
+      setGameState("submitting")
+      setMessage("Tiempo agotado...")
+      try {
+        if (!sessionToken) throw new Error("No hay token de sesión")
+        // Enviar array vacío para registrar cooldown sin dar recompensa
+        const res = await endMinigame(sessionToken, { selected_items: [] })
+        syncUserState(res.user)
+        setMessage("¡Se acabó el tiempo! No obtuviste recompensa por no darle a '¡Terminé!'.")
+        setGameState("lost")
+      } catch (err: any) {
+        setMessage(err.message || "Error al procesar tiempo agotado")
+        setGameState("lost")
+      }
+    })()
+  }
+
+  // El botón "Terminé" usa el guard
+  const handleGameOver = () => handleGameOverSafe()
+
+
+  // Mantener selectedRef sincronizado con el estado (evita stale closure en el timer)
+  useEffect(() => { selectedRef.current = selected }, [selected])
 
   const handleSelect = (id: number) => {
     if (gameState !== "playing") return
@@ -108,6 +148,7 @@ export default function Compost() {
   }
 
   const handleClose = () => {
+    isSubmittingRef.current = false  // reset para la próxima partida
     setGameState("idle")
     setSelected([])
     setTimeLeft(3)
@@ -150,7 +191,7 @@ export default function Compost() {
               <div className="bg-amber-100/50 p-4 rounded-xl border-2 border-amber-500/30">
                 <p class="text-black text-center text-sm font-medium">
                   Selecciona <strong>SOLO</strong> los objetos orgánicos.<br />
-                  Tienes 3 segundos. ¡Mucha suerte!
+                  Tienes 3 segundos y <strong>DEBES</strong> darle a <strong>¡Terminé!</strong> antes de que acabe el tiempo.<br /> ¡Mucha suerte!
                 </p>
               </div>
               <button

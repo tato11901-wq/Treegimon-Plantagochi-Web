@@ -1,4 +1,4 @@
-import { useState, useRef } from "preact/hooks";
+import { useState, useEffect, useRef } from "preact/hooks";
 import {
    isWaterGameOpen,
    isCompostGameOpen,
@@ -13,7 +13,8 @@ import {
    plantName,
    username,
    isMuted,
-   globalVolume
+   globalVolume,
+   isUnityViewerOpen
 } from "../../store/resourceStore";
 import { 
    isDebugOpen, 
@@ -24,11 +25,11 @@ import {
    isSunning, 
    isEvolving 
 } from "../../store/plantStore";
+import SPECIES_DESCRIPTION_JSON from "../../config/speciesDescription.json";
+import SPECIES_JSON from "../../config/species.json";
 import { loadTreeFile, applyTreeDataFrom3D, consumeSeeds } from "../../store/unityBridge";
 import { createPlant } from "../../store/apiClient";
 import { refreshInventory } from "../../store/resourceStore";
-import SPECIES_DESCRIPTION_JSON from "../../config/speciesDescription.json";
-import SPECIES_JSON from "../../config/species.json";
 
 import btnMinijuegoComposta from '../../assets/Recursos web media/btn_MinijuegoComposta.png';
 import btnMinijuegoAgua from '../../assets/Recursos web media/btn_MinijuegoAgua.png';
@@ -37,14 +38,64 @@ import solEscenario from '../../assets/Recursos web media/SolEscenario.png';
 import Plant from './Plant';
 import DebugPanel from './DebugPanel';
 import bgMusicSrc from '../../assets/Sonidos Interacciones/Music Background.mp3';
-import { useEffect } from "preact/hooks";
+
 
 export default function GameArea() {
    const entLocked = isEntActive.value;
    const audioRef = useRef<HTMLAudioElement>(null);
-
    const fadeIntervalRef = useRef<number | null>(null);
    const BASE_BGM_VOLUME = 0.15;
+
+   // ── Estado del botón Sync 3D ──
+   type SyncStatus = "idle" | "loading" | "ok" | "error";
+   const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
+   const fileInputRef = useRef<HTMLInputElement>(null);
+
+   const handleSyncClick = () => fileInputRef.current?.click();
+
+   const handleTreeFileChange = async (e: Event) => {
+      const input = e.target as HTMLInputElement;
+      const file = input.files?.[0];
+      if (!file) return;
+      setSyncStatus("loading");
+      try {
+         const treeData = await loadTreeFile(file);
+         const { nuevasSemillas, plantasActualizadas } = applyTreeDataFrom3D(treeData);
+         if (nuevasSemillas.length > 0) {
+            for (const seed of nuevasSemillas) {
+               try { await createPlant(seed.species_id, seed.subid); }
+               catch (err) { console.error(`Error creando planta para semilla ${seed.seed_id}:`, err); }
+            }
+            consumeSeeds();
+            refreshInventory();
+         }
+         console.info(`[Sync 3D] ✓ Plantas actualizadas: ${plantasActualizadas} | Semillas: ${nuevasSemillas.length}`);
+         setSyncStatus("ok");
+         setTimeout(() => setSyncStatus("idle"), 2500);
+      } catch (err) {
+         console.error("[Sync 3D] Error al importar .tree:", err);
+         setSyncStatus("error");
+         setTimeout(() => setSyncStatus("idle"), 3000);
+      } finally {
+         input.value = "";
+      }
+   };
+
+   // ── Pausar audio cuando Unity está abierto ──────────────────────────────
+   useEffect(() => {
+      const audio = audioRef.current;
+      if (!audio) return;
+      if (isUnityViewerOpen.value) {
+         // Silenciar la web al abrir Unity
+         audio.pause();
+         if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
+      } else if (!isMuted.value) {
+         // Reanudar cuando se cierra Unity (solo si no está muteado manualmente)
+         const target = globalVolume.value * BASE_BGM_VOLUME;
+         audio.volume = (isSunning.value || isEvolving.value) ? target * 0.2 : target;
+         audio.play().catch(() => {});
+      }
+   }, [isUnityViewerOpen.value]);
 
    // Manejo del audio de fondo
    useEffect(() => {
@@ -52,11 +103,10 @@ export default function GameArea() {
          if (isMuted.value) {
             audioRef.current.pause();
             if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
-         } else {
-            // Ajustar volumen según el globalVolume
+         } else if (!isUnityViewerOpen.value) {
+            // Solo reproducir si Unity no está abierto
             const target = globalVolume.value * BASE_BGM_VOLUME;
             audioRef.current.volume = (isSunning.value || isEvolving.value) ? target * 0.2 : target;
-            
             audioRef.current.play().catch(() => {
                console.warn("Autoplay bloqueado por el navegador.");
             });
@@ -135,15 +185,17 @@ export default function GameArea() {
       return commonName;
    };
 
-   // ── Estado del botón de sincronización 3D ──
-   type SyncStatus = "idle" | "loading" | "ok" | "error";
-   const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
-   const fileInputRef = useRef<HTMLInputElement>(null);
+   const getScientificName = () => {
+      const speciesId = plantSpeciesId.value;
+      const speciesData = (SPECIES_JSON as any)[speciesId];
+      return speciesData?.scientific_name || "";
+   };
 
    const handleOpenWater = () => {
-      if (entLocked || isWaterOnCooldown.value) return; 
+      if (entLocked || isWaterOnCooldown.value) return;
       isWaterGameOpen.value = true;
    };
+
 
    const handleOpenCompost = (e: MouseEvent) => {
       // Botón oculto (modo admin): Activación por combinación de teclas restringida por usuario
@@ -162,54 +214,6 @@ export default function GameArea() {
       isSunGameOpen.value = true;
    };
 
-   /** Abre el selector de archivo .tree */
-   const handleSyncClick = () => {
-      fileInputRef.current?.click();
-   };
-
-   /** Procesa el archivo .tree seleccionado */
-   const handleTreeFileChange = async (e: Event) => {
-      const input = e.target as HTMLInputElement;
-      const file = input.files?.[0];
-      if (!file) return;
-
-      setSyncStatus("loading");
-      try {
-         const treeData = await loadTreeFile(file);
-         const { nuevasSemillas, plantasActualizadas } = applyTreeDataFrom3D(treeData);
-         
-         // Procesar semillas nuevas (instanciarlas como plantas reales)
-         if (nuevasSemillas.length > 0) {
-            console.info(`[Sync 3D] Procesando ${nuevasSemillas.length} semillas nuevas...`);
-            for (const seed of nuevasSemillas) {
-               try {
-                  await createPlant(seed.species_id, seed.subid);
-               } catch (e) {
-                  console.error(`Error creando planta para semilla ${seed.seed_id}:`, e);
-               }
-            }
-            consumeSeeds(); // Vaciar lista de semillas tras instanciarlas
-            refreshInventory();
-         }
-
-         setSyncStatus("ok");
-
-         // Feedback por consola para debug
-         console.info(
-            `[Sync 3D] ✓ Plantas actualizadas: ${plantasActualizadas} | Semillas instanciadas: ${nuevasSemillas.length}`
-         );
-
-         // Volver a idle tras 2.5 segundos
-         setTimeout(() => setSyncStatus("idle"), 2500);
-      } catch (err: any) {
-         console.error("[Sync 3D] Error al importar .tree:", err);
-         setSyncStatus("error");
-         setTimeout(() => setSyncStatus("idle"), 3000);
-      } finally {
-         // Limpiar el input para permitir re-seleccionar el mismo archivo
-         input.value = "";
-      }
-   };
 
    return (
       <>
@@ -315,9 +319,16 @@ export default function GameArea() {
                      {plantPhase.value === "ent" ? "Información del Ent" : "Información de la Planta"}
                   </h2>
                   
-                  {/* Nombre de la especie / Autor */}
-                  <div className="text-[#4e341b]/80 text-xl lg:text-2xl font-black mb-4 text-center drop-shadow-sm italic">
-                     {getSubheader()}
+                  {/* Nombre de la especie / Autor y Nombre científico */}
+                  <div className="flex flex-col items-center mb-4 text-center">
+                     <div className="text-[#4e341b]/80 text-xl lg:text-2xl font-black drop-shadow-sm uppercase">
+                        {getSubheader()}
+                     </div>
+                     {getScientificName() && (
+                        <div className="text-[#4e341b]/60 text-base lg:text-lg italic font-bold">
+                           {getScientificName()}
+                        </div>
+                     )}
                   </div>
 
                   <div className="flex-1 w-full overflow-y-auto px-6 mt-4 text-[#4e341b] text-lg lg:text-2xl font-semibold leading-relaxed
@@ -342,7 +353,7 @@ export default function GameArea() {
             id="tree-file-input"
          />
 
-         {/* ── Botón pastilla: Sincronizar desde 3D ── */}
+         {/* ── Botón pastilla flotante: Sync desde 3D ── */}
          <button
             id="btn-sync-3d"
             onClick={handleSyncClick}
@@ -370,9 +381,9 @@ export default function GameArea() {
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
                </svg>
             )}
-            {syncStatus === "ok" && <span>✓</span>}
+            {syncStatus === "ok"    && <span>✓</span>}
             {syncStatus === "error" && <span>✗</span>}
-            {syncStatus === "idle" && (
+            {syncStatus === "idle"  && (
                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round"
                      d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12V4m0 8l-3-3m3 3l3-3" />
